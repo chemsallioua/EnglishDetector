@@ -1,13 +1,14 @@
 print("Importing modules....")
 
+from collections import defaultdict
 from nltk.classify import NaiveBayesClassifier, accuracy
 from nltk import FreqDist, LaplaceProbDist
 from nltk.stem import WordNetLemmatizer
+from nltk.metrics import ConfusionMatrix
 import random
+from os import path
 
 from corpus_filtering import clean_string
-
-from os import path
 
 from feature_extractor import *
 
@@ -20,7 +21,6 @@ if __name__ == "__main__":
     all_en_words = []
     labeled_en_sentences_documents = []
     labeled_non_en_sentences_documents = []
-    labeled_words_document = []
     en_train_words = []
     non_en_train_words = []
 
@@ -42,12 +42,10 @@ if __name__ == "__main__":
                 en_train_words.extend(lemmas[0:sentence_legth])
                 i = i +1
 
-    all_non_en_words = []
     i = 0
     with open(corpora_dir + 'non_english.txt', "r", encoding="utf-8") as f:
         for sentance in f:
             sen = sentance.split()
-            all_non_en_words.extend(sen)
             if (i < n_sentences):
                 labeled_non_en_sentences_documents.append((sen[0:sentence_legth], "non_en"))
                 non_en_train_words.extend(sen[0:sentence_legth])
@@ -88,12 +86,32 @@ if __name__ == "__main__":
     print("DONE.....", end= "\n\n" )
     print("-------------------------------------------------------------------------")
 
-    print("Now traing our Naive Bayes Classifier to detect ngrams in words" )
+    print("Now training our Naive Bayes Classifier" )
     classifier = NaiveBayesClassifier.train(train_set,LaplaceProbDist)
 
     print("FINISHED! This is the accuracy of the model: ",accuracy(classifier, test_set))
     classifier.show_most_informative_features(5)
     print("\n")
+
+    print("-------------------------------------------------------------------------")
+
+    print("Let's create the Confusion Matrix by classifying the whole featureset\n" )
+    refsets = defaultdict(set)
+    testsets = defaultdict(set)
+    labels = []
+    tests = []
+    for i, (feats, label) in enumerate(featuresets):
+        refsets[label].add(i)
+        observed = classifier.classify(feats)
+        testsets[observed].add(i)
+        labels.append(label)
+        tests.append(observed)
+    cm = ConfusionMatrix(labels, tests)
+
+    print("Performance Metrics:\n" )
+    
+    print(cm)
+    print(cm.evaluate())
 
     while(True):
         print("-------------------------------------------------------------------------")
