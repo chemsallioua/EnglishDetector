@@ -1,54 +1,12 @@
-import collections
-
-from nltk.collocations import BigramCollocationFinder
-from nltk.corpus import stopwords
-from nltk.metrics import BigramAssocMeasures
 from nltk import ngrams
 import random
-
-def bag_of_words(words, feature ="word"):
-    return [{feature: word} for word in words]
-
-def bag_of_words_not_in_set(words, badwords):
-    return bag_of_words(set(words) - set(badwords))
-
-def bag_of_bigrams_words(words, score_fn=BigramAssocMeasures.chi_sq, n=200):
-    bigram_finder = BigramCollocationFinder.from_words(words)
-    bigrams = bigram_finder.nbest(score_fn, n)
-    return bag_of_words(words + bigrams)
-
-def bag_of_non_stopwords(words, stopfile='and'):
-    badwords = stopwords.words(stopfile)
-    return bag_of_words_not_in_set(words, badwords)
-
-def bag_of_bigrams_words(words, score_fn=BigramAssocMeasures.chi_sq, n=200):
-    bigram_finder = BigramCollocationFinder.from_words(words)
-    bigrams = bigram_finder.nbest(score_fn, n)
-    return bag_of_words(words + bigrams)
-
-def label_feats_from_corpus(corp, feature_detector=bag_of_words):
-    label_feats = collections.defaultdict(list)
-    for label in corp.categories():
-        for fileid in corp.fileids(categories=[label]):
-            feats = feature_detector(corp.words(fileids=[fileid]))
-            label_feats[label].append(feats)
-            return label_feats
+import sys
+from unicodedata import category
         
 def split_label_feats(lfeats, split=0.75):
     cutoff = int(len(lfeats) * split)
     random.shuffle(lfeats)
     return lfeats[:cutoff], lfeats[cutoff:]
-
-def bag_of_trigrams_char(words):
-    return bag_of_words(ngrams_char(words), feature ="trigram")
-
-def featuresets_from_words(words_list, labels, feature_detector=bag_of_words):
-    featuresets = []
-    for label in labels:
-        for words in words_list:
-            feats = feature_detector(words)
-            featuresets =  featuresets + [(feat, label) for feat in feats]
-    return featuresets
 
 def document_word_features(document, word_features): 
     document_words = set(document)
@@ -80,3 +38,26 @@ def ngrams_char(words, n, left_pad = False, right_pad = False):
             ngrams_char.append(gram)
     # print(trigrams_char)
     return ngrams_char
+
+def clean_sentance_list(sentence_list, stop_char=None ,excep=["'", " "]):
+    clean_sentances_list = []
+    for sentence in sentence_list:
+        clean_sentances_list.append(clean_string(sentence,stop_char, excep))   
+    return clean_sentances_list
+
+
+# removes all symbols, punctuation, and leading and closing whitespaces, 
+def clean_string(string, stop_char = None, excep = ["'", " "]):
+
+    if(stop_char == None):
+        chrs = (chr(i) for i in range(sys.maxunicode + 1))
+        stop_char = list(c for c in chrs if category(c).startswith("L"))
+
+    sc = stop_char + excep
+
+    string = str(string)
+    for ch in string:
+        if ch not in sc:
+            string = string.replace(ch, '')
+    # print("sentence is: " + string.strip())
+    return string.strip().lower()

@@ -6,29 +6,7 @@ import sys
 from unicodedata import category
 from math import ceil
 
-def clean_sentance_list(sentence_list, stop_char=None ,excep=["'", " "]):
-    clean_sentances_list = []
-    for sentence in sentence_list:
-        clean_sentances_list.append(clean_string(sentence,stop_char, excep))   
-    return clean_sentances_list
-
-
-# removes all symbols, punctuation, and leading and closing whitespaces, 
-def clean_string(string, stop_char = None, excep = ["'", " "]):
-
-    if(stop_char == None):
-        chrs = (chr(i) for i in range(sys.maxunicode + 1))
-        stop_char = list(c for c in chrs if category(c).startswith("L"))
-
-    sc = stop_char + excep
-
-    string = str(string)
-    for ch in string:
-        if ch not in sc:
-            string = string.replace(ch, '')
-    # print("sentence is: " + string.strip())
-    return string.strip().lower()
-
+from feature_extractor import clean_sentance_list, clean_string
 
 if __name__ == "__main__":
 
